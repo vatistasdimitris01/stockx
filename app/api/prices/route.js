@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
-import { fetchHistory, getYahoo } from "../../../lib/yahoo";
+import { fetchHistory, fetchQuote } from "../../../lib/yahoo";
 import { sma, rsi, macd, bollinger, annualVolatility, logReturns } from "../../../lib/indicators";
+import { marketJson } from "../../../lib/api-response";
 
 export const dynamic = "force-dynamic";
 
@@ -10,44 +10,41 @@ export async function GET(request) {
   const period = searchParams.get("period") || "2y";
   const interval = searchParams.get("interval") || "1d";
 
-  if (!ticker) return NextResponse.json({ error: "Missing ticker" }, { status: 400 });
+  if (!ticker) return marketJson({ error: "Missing ticker" }, { status: 400 });
+  if (!/^[A-Z0-9.^=_/-]{1,18}$/.test(ticker)) return marketJson({ error: "Invalid ticker" }, { status: 400 });
+  if (!["1mo", "3mo", "6mo", "1y", "2y", "5y", "10y"].includes(period)) return marketJson({ error: "Invalid historical period" }, { status: 400 });
+  if (!["1d", "1wk"].includes(interval)) return marketJson({ error: "Invalid historical interval" }, { status: 400 });
 
   try {
-    const history = await fetchHistory(ticker, period, interval);
-    const closes = history.map((r) => r.close);
-    if (closes.length < 40) {
-      return NextResponse.json({ error: "Insufficient data" }, { status: 400 });
-    }
+    const [history, quoteResult] = await Promise.all([
+      fetchHistory(ticker, period, interval),
+      fetchQuote(ticker).catch(() => null),
+    ]);
+    const closes = history.map((row) => row.close);
+    if (closes.length < 40) return marketJson({ error: "Insufficient provider history" }, { status: 400 });
 
     const sma20 = sma(closes, 20);
     const sma50 = sma(closes, 50);
     const rsi14 = rsi(closes, 14);
     const { macdLine, signalLine } = macd(closes);
     const { upper: bbUpper, lower: bbLower } = bollinger(closes, 20, 2);
-    const vol = annualVolatility(logReturns(closes.slice(-260)));
+    const volatility = annualVolatility(logReturns(closes.slice(-260)));
+    const quote = quoteResult ? {
+      symbol: quoteResult.symbol || ticker,
+      currency: quoteResult.currency || null,
+      exchange: quoteResult.fullExchangeName || quoteResult.exchange || null,
+      price: Number.isFinite(quoteResult.regularMarketPrice) ? quoteResult.regularMarketPrice : null,
+      change: Number.isFinite(quoteResult.regularMarketChange) ? quoteResult.regularMarketChange : null,
+      changePercent: Number.isFinite(quoteResult.regularMarketChangePercent) ? quoteResult.regularMarketChangePercent : null,
+      dayHigh: Number.isFinite(quoteResult.regularMarketDayHigh) ? quoteResult.regularMarketDayHigh : null,
+      dayLow: Number.isFinite(quoteResult.regularMarketDayLow) ? quoteResult.regularMarketDayLow : null,
+      name: quoteResult.longName || quoteResult.shortName || quoteResult.symbol || ticker,
+    } : null;
 
-    let quote = null;
-    try {
-      const q = await getYahoo().quote(ticker);
-      quote = {
-        symbol: q.symbol,
-        currency: q.currency,
-        exchange: q.fullExchangeName || q.exchange,
-        price: q.regularMarketPrice,
-        change: q.regularMarketChange,
-        changePercent: q.regularMarketChangePercent,
-        dayHigh: q.regularMarketDayHigh,
-        dayLow: q.regularMarketDayLow,
-        name: q.longName || q.shortName || q.symbol,
-      };
-    } catch {
-      quote = null;
-    }
-
-    return NextResponse.json({
+    return marketJson({
       ticker,
       quote,
-      annualVolatility: vol,
+      annualVolatility: volatility,
       history,
       indicators: {
         sma20,
@@ -58,11 +55,8 @@ export async function GET(request) {
         bbUpper,
         bbLower,
       },
-    });
-  } catch (err) {
-    return NextResponse.json(
-      { error: err?.message || "Failed to load market data" },
-      { status: 502 }
-    );
+    }, { sMaxAge: 60, staleWhileRevalidate: 300 });
+  } catch (error) {
+    return marketJson({ error: error?.message || "Failed to load provider price history" }, { status: 502 });
   }
 }
