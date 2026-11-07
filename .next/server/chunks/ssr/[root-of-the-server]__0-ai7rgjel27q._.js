@@ -1,0 +1,3 @@
+module.exports=[18622,(a,b,c)=>{b.exports=a.x("next/dist/compiled/next-server/app-page-turbo.runtime.prod.js",()=>require("next/dist/compiled/next-server/app-page-turbo.runtime.prod.js"))},98421,a=>{"use strict";var b=a.i(7997);a.s(["default",0,function({children:a}){return(0,b.jsx)("html",{lang:"en",children:(0,b.jsx)("body",{children:a})})},"metadata",0,{title:"StocksX",description:"Quantitative market terminal"}])},46122,function(a){a.n(a.i(98421))},24951,(a,b,c)=>{"use strict";b.exports=a.r(18622)},7997,(a,b,c)=>{"use strict";b.exports=a.r(24951).vendored["react-rsc"].ReactJsxRuntime}];
+
+//# sourceMappingURL=%5Broot-of-the-server%5D__0-ai7rgjel27q._.js.map

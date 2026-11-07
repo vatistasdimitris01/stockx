@@ -1,0 +1,12 @@
+{
+  "/_global-error/page": "app/_global-error/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/backtest/route": "app/api/backtest/route.js",
+  "/api/forecast/route": "app/api/forecast/route.js",
+  "/api/market/route": "app/api/market/route.js",
+  "/api/prices/route": "app/api/prices/route.js",
+  "/api/scan/route": "app/api/scan/route.js",
+  "/api/search/route": "app/api/search/route.js",
+  "/api/watch/route": "app/api/watch/route.js",
+  "/page": "app/page.js"
+}

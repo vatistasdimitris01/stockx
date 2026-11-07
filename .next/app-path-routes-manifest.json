@@ -1,0 +1,12 @@
+{
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/api/backtest/route": "/api/backtest",
+  "/api/forecast/route": "/api/forecast",
+  "/api/market/route": "/api/market",
+  "/api/prices/route": "/api/prices",
+  "/api/scan/route": "/api/scan",
+  "/api/search/route": "/api/search",
+  "/api/watch/route": "/api/watch",
+  "/page": "/"
+}
